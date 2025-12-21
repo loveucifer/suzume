@@ -1,6 +1,17 @@
+#include "SuzumeWindow.hpp"
+#include <stdexcept>
 #define GLFW_INCLUDE_VULKAN
-#include <SuzumeWindow.hpp>
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
+
+void SuzumeWindow::framebufferResizeCallback(GLFWwindow *window, int width,
+                                             int height) {
+  auto suzumeWindow =
+      reinterpret_cast<SuzumeWindow *>(glfwGetWindowUserPointer(window));
+  suzumeWindow->framebufferResized = true;
+  suzumeWindow->width = width;
+  suzumeWindow->height = height;
+}
 
 SuzumeWindow::SuzumeWindow(int w, int h, const std::string &title)
     : width(w), height(h), windowName(title), window(nullptr) {
@@ -13,9 +24,11 @@ SuzumeWindow::~SuzumeWindow() {
 void SuzumeWindow::initwindow() {
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
   window =
       glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
+  glfwSetWindowUserPointer(window, this);
+  glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
 void SuzumeWindow::createWindowSurface(VkInstance instance,

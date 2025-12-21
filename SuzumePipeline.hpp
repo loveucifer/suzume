@@ -1,14 +1,13 @@
 #pragma once
 #include "SuzumeDevice.hpp"
-#include "SuzumePipeline.hpp"
 #include "vulkan/vulkan_core.h"
 #include <string>
 #include <vector>
 
+namespace Suzume {
 struct PipelineConfigInfo {
   VkViewport viewport;
   VkRect2D scissor;
-  VkPipelineViewportStateCreateInfo viewportInfo;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
   VkPipelineRasterizationStateCreateInfo rasterizationInfo;
   VkPipelineMultisampleStateCreateInfo multisampleInfo;
@@ -22,13 +21,15 @@ struct PipelineConfigInfo {
 
 class SuzumePipeline {
 public:
-  SuzumePipeline(Suzume::SuzumeDevice &device, const std::string &vertFilePath,
+  SuzumePipeline(SuzumeDevice &device, const std::string &vertFilePath,
                  const std::string &fragFilePath,
                  const PipelineConfigInfo &configInfo);
   ~SuzumePipeline();
 
   SuzumePipeline(const SuzumePipeline &) = delete;
   void operator=(const SuzumePipeline &) = delete;
+
+  void bind(VkCommandBuffer commandBuffer);
 
   static PipelineConfigInfo defaultPipelineConfigInfo(uint32_t width,
                                                       uint32_t height);
@@ -44,8 +45,9 @@ private:
       const std::vector<char> &code,
       VkShaderModule *shaderModule); // haha pointer to a pointer lmaoo wtf
 
-  Suzume::SuzumeDevice &device;
+  SuzumeDevice &device;
   VkPipeline graphicsPipeline;
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
-}; // namespace Suzume
+};
+} // namespace Suzume

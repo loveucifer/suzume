@@ -5,7 +5,9 @@
 #include <iostream>
 #include <stdexcept>
 
-SuzumePipeline::SuzumePipeline(Suzume::SuzumeDevice &device,
+namespace Suzume {
+
+SuzumePipeline::SuzumePipeline(SuzumeDevice &device,
                                const std::string &vertFilePath,
                                const std::string &fragFilePath,
                                const PipelineConfigInfo &configinfo)
@@ -37,15 +39,17 @@ SuzumePipeline::~SuzumePipeline() {
   vkDestroyPipeline(device.device(), graphicsPipeline, nullptr);
 }
 
+void SuzumePipeline::bind(VkCommandBuffer commandBuffer) {
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    graphicsPipeline);
+}
+
 void SuzumePipeline::createGraphicsPipeline(
     const std::string &vertFilePath, const std::string &fragFilePath,
     const PipelineConfigInfo &configinfo) {
 
-  assert(configinfo.pipelineLayout != VK_NULL_HANDLE) &&
-      "cannot create graphics pipeline without pipeline layout";
-
-  assert(configinfo.renderPass != VK_NULL_HANDLE) &&
-      "cannot create graphics pipeline without render pass";
+  assert(configinfo.pipelineLayout != VK_NULL_HANDLE);
+  assert(configinfo.renderPass != VK_NULL_HANDLE);
 
   auto vertCode = readFile(vertFilePath);
   auto fragCode = readFile(fragFilePath);
@@ -82,13 +86,20 @@ void SuzumePipeline::createGraphicsPipeline(
   VertexInputInfo.vertexBindingDescriptionCount = 0;
   VertexInputInfo.pVertexBindingDescriptions = nullptr;
 
+  VkPipelineViewportStateCreateInfo viewportInfo{};
+  viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewportInfo.viewportCount = 1;
+  viewportInfo.pViewports = &configinfo.viewport;
+  viewportInfo.scissorCount = 1;
+  viewportInfo.pScissors = &configinfo.scissor;
+
   VkGraphicsPipelineCreateInfo pipelineInfo{};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineInfo.stageCount = 2;
   pipelineInfo.pStages = shaderStageInfo;
   pipelineInfo.pVertexInputState = &VertexInputInfo;
   pipelineInfo.pInputAssemblyState = &configinfo.inputAssemblyInfo;
-  pipelineInfo.pViewportState = &configinfo.viewportInfo;
+  pipelineInfo.pViewportState = &viewportInfo;
   pipelineInfo.pRasterizationState = &configinfo.rasterizationInfo;
   pipelineInfo.pMultisampleState = &configinfo.multisampleInfo;
   pipelineInfo.pColorBlendState = &configinfo.colorBlendInfo;
@@ -139,13 +150,6 @@ PipelineConfigInfo SuzumePipeline::defaultPipelineConfigInfo(uint32_t width,
 
   configInfo.scissor.offset = {0, 0};
   configInfo.scissor.extent = {width, height};
-
-  configInfo.viewportInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  configInfo.viewportInfo.viewportCount = 1;
-  configInfo.viewportInfo.pViewports = &configInfo.viewport;
-  configInfo.viewportInfo.scissorCount = 1;
-  configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
   configInfo.rasterizationInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -212,3 +216,4 @@ PipelineConfigInfo SuzumePipeline::defaultPipelineConfigInfo(uint32_t width,
 
   return configInfo;
 }
+} // namespace Suzume

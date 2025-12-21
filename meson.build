@@ -12,5 +12,6 @@ executable(
   'SuzumeWindow.cpp',
   'SuzumeDevice.cpp',
   'SuzumePipeline.cpp',
+  'SuzumeSwapChain.cpp',
   dependencies: [vulkan_dep, glfw_dep],
 )

@@ -1,14 +1,15 @@
+#include "FirstApp.hpp"
 #include <cstdlib>
-#include <firstapp.hpp>
 #include <iostream>
 #include <stdexcept>
+
 int main() {
-  Suzume::firstapp app;
+  Suzume::FirstApp app{};
   try {
     app.run();
   } catch (const std::exception &e) {
-    std::cerr << "Exception: " << e.what() << std::endl;
+    std::cerr << e.what() << '\n';
+    return EXIT_FAILURE;
   }
-
-  return 0;
+  return EXIT_SUCCESS;
 }
