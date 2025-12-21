@@ -3,14 +3,14 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-namespace suzume {
-class suzumewindow {
+namespace Suzume {
+class SuzumeWindow {
 public:
-  suzumewindow(int w, int h, const std::string &title);
-  ~suzumewindow(); // cleanup window later when we want to destroy it
+  SuzumeWindow(int w, int h, const std::string &title);
+  ~SuzumeWindow(); // cleanup window later when we want to destroy it
 
-  suzumewindow(const suzumewindow &) = delete;
-  suzumewindow &operator=(const suzumewindow &) = delete;
+  SuzumeWindow(const SuzumeWindow &) = delete;
+  SuzumeWindow &operator=(const SuzumeWindow &) = delete;
 
   bool shouldClose() {
     return (glfwWindowShouldClose(window));
@@ -27,4 +27,4 @@ private:
 
   GLFWwindow *window;
 };
-} // namespace suzume
+} // namespace Suzume

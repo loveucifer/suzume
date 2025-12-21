@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 int main() {
-  suzume::firstapp app;
+  Suzume::firstapp app;
   try {
     app.run();
   } catch (const std::exception &e) {

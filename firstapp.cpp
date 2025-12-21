@@ -1,11 +1,11 @@
 #include <firstapp.hpp>
 
-namespace suzume {
-firstapp::firstapp() : suzumewindow(WIDTH, HEIGHT, "suzume testing") {}
+namespace Suzume {
+firstapp::firstapp() : SuzumeWindow(WIDTH, HEIGHT, "Suzume testing") {}
 
 void firstapp::run() {
-  while (!suzumewindow.shouldClose()) {
-    suzumewindow.pollEvents();
+  while (!SuzumeWindow.shouldClose()) {
+    SuzumeWindow.pollEvents();
   }
 }
-} // namespace suzume
+} // namespace Suzume

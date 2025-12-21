@@ -1,7 +1,7 @@
 #pragma once
-#include <suzumewindow.hpp>
+#include <SuzumeWindow.hpp>
 
-namespace suzume {
+namespace Suzume {
 class firstapp {
 public:
   static constexpr int WIDTH = 800;
@@ -11,6 +11,6 @@ public:
   void run();
 
 private:
-  suzumewindow suzumewindow;
+  SuzumeWindow SuzumeWindow;
 };
-} // namespace suzume
+} // namespace Suzume
