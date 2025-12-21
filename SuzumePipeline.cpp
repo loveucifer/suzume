@@ -1,4 +1,5 @@
 #include "SuzumePipeline.hpp"
+#include "SuzumeModel.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cassert>
 #include <fstream>
@@ -78,13 +79,18 @@ void SuzumePipeline::createGraphicsPipeline(
   shaderStageInfo[1].pNext = nullptr;
   shaderStageInfo[1].pSpecializationInfo = nullptr;
 
+  auto bindingDescriptions = SuzumeModel::Vertex::getBindingDescriptions();
+  auto attributeDescriptions = SuzumeModel::Vertex::getAttributeDescriptions();
+
   VkPipelineVertexInputStateCreateInfo VertexInputInfo{};
   VertexInputInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  VertexInputInfo.vertexAttributeDescriptionCount = 0;
-  VertexInputInfo.pVertexAttributeDescriptions = nullptr;
-  VertexInputInfo.vertexBindingDescriptionCount = 0;
-  VertexInputInfo.pVertexBindingDescriptions = nullptr;
+  VertexInputInfo.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attributeDescriptions.size());
+  VertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+  VertexInputInfo.vertexBindingDescriptionCount =
+      static_cast<uint32_t>(bindingDescriptions.size());
+  VertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 
   VkPipelineViewportStateCreateInfo viewportInfo{};
   viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

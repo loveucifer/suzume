@@ -1,6 +1,7 @@
 #pragma once
 #include "SuzumeDevice.hpp"
 #include "vulkan/vulkan_core.h"
+#include <SuzumeModel.hpp>
 #include <SuzumePipeline.hpp>
 #include <SuzumeSwapChain.hpp>
 #include <SuzumeWindow.hpp>
@@ -24,6 +25,7 @@ public:
   void run();
 
 private:
+  void loadModels();
   void createPipelineLayout();
   void createPipeline();
   void createCommandBuffers();
@@ -36,5 +38,6 @@ private:
   std::unique_ptr<SuzumePipeline> suzumePipeline;
   VkPipelineLayout pipelineLayout;
   std::vector<VkCommandBuffer> commandBuffers;
+  std::unique_ptr<SuzumeModel> suzumeModel;
 };
 } // namespace Suzume

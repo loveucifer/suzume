@@ -4,14 +4,16 @@ project('vulkan_app', 'cpp',
 
 vulkan_dep = dependency('vulkan')
 glfw_dep = dependency('glfw3')
+glm_dep = dependency('glm')
 
 executable(
   'vulkan_app',
   'main.cpp',
-  'firstapp.cpp',
+  'FirstApp.cpp',
   'SuzumeWindow.cpp',
   'SuzumeDevice.cpp',
   'SuzumePipeline.cpp',
   'SuzumeSwapChain.cpp',
-  dependencies: [vulkan_dep, glfw_dep],
+  'SuzumeModel.cpp',
+  dependencies: [vulkan_dep, glfw_dep, glm_dep],
 )

@@ -1,5 +1,6 @@
 #include "FirstApp.hpp"
 
+#include "SuzumeModel.hpp"
 #include "SuzumePipeline.hpp"
 #include "SuzumeSwapChain.hpp"
 #include <array>
@@ -9,6 +10,7 @@
 namespace Suzume {
 
 FirstApp::FirstApp() {
+  loadModels();
   createPipelineLayout();
   createPipeline();
   createCommandBuffers();
@@ -25,6 +27,14 @@ void FirstApp::run() {
   }
 
   vkDeviceWaitIdle(device.device());
+}
+void FirstApp::loadModels() {
+  std::vector<SuzumeModel::Vertex> vertices = {{
+                                                   {0.0f, -0.5f},
+                                               },
+                                               {{0.5f, 0.5f}},
+                                               {{-0.5f, 0.5f}}};
+  suzumeModel = std::make_unique<SuzumeModel>(device, vertices);
 }
 
 void FirstApp::createPipelineLayout() {
@@ -90,6 +100,9 @@ void FirstApp::createCommandBuffers() {
                          VK_SUBPASS_CONTENTS_INLINE);
 
     suzumePipeline->bind(commandBuffers[i]);
+    suzumeModel->bind(commandBuffers[i]);
+    suzumeModel->draw(commandBuffers[i]);
+
     vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffers[i]);
