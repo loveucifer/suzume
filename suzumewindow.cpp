@@ -1,5 +1,6 @@
-#include "GLFW/glfw3.h"
+#define GLFW_INCLUDE_VULKAN
 #include <SuzumeWindow.hpp>
+#include <vulkan/vulkan.h>
 
 SuzumeWindow::SuzumeWindow(int w, int h, const std::string &title)
     : width(w), height(h), windowName(title), window(nullptr) {
@@ -17,6 +18,10 @@ void SuzumeWindow::initwindow() {
       glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
 }
 
-void SuzumeWindow::pollEvents() { glfwPollEvents(); }
-
-bool SuzumeWindow::shouldClose() const { return glfwWindowShouldClose(window); }
+void SuzumeWindow::createWindowSurface(VkInstance instance,
+                                       VkSurfaceKHR *surface) {
+  if (glfwCreateWindowSurface(instance, window, nullptr, surface) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create window surface!");
+  }
+}

@@ -1,6 +1,7 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
 #include <string>
 
 class SuzumeWindow {
@@ -15,8 +16,7 @@ public:
     return (glfwWindowShouldClose(window));
   } // used elsewhere read code idiot
 
-  void pollEvents();
-  bool shouldClose() const;
+  void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
 
 private:
   void initwindow();
@@ -24,5 +24,5 @@ private:
   const int height;
   std::string windowName;
 
-   GLFWwindow *window;
+  GLFWwindow *window;
 };

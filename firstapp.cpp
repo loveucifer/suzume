@@ -4,8 +4,8 @@ namespace Suzume {
 firstapp::firstapp() : SuzumeWindow(WIDTH, HEIGHT, "Suzume testing") {}
 
 void firstapp::run() {
-  while (!SuzumeWindow.shouldClose()) {
-    SuzumeWindow.pollEvents();
+  while (!this->SuzumeWindow.shouldClose()) {
+    glfwPollEvents();
   }
 }
 } // namespace Suzume
