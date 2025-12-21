@@ -1,7 +1,6 @@
 #include "GLFW/glfw3.h"
 #include <SuzumeWindow.hpp>
 
-namespace Suzume {
 SuzumeWindow::SuzumeWindow(int w, int h, const std::string &title)
     : width(w), height(h), windowName(title), window(nullptr) {
   initwindow();
@@ -21,4 +20,3 @@ void SuzumeWindow::initwindow() {
 void SuzumeWindow::pollEvents() { glfwPollEvents(); }
 
 bool SuzumeWindow::shouldClose() const { return glfwWindowShouldClose(window); }
-} // namespace Suzume

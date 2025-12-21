@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-namespace Suzume {
 class SuzumeWindow {
 public:
   SuzumeWindow(int w, int h, const std::string &title);
@@ -25,6 +24,5 @@ private:
   const int height;
   std::string windowName;
 
-  GLFWwindow *window;
+   GLFWwindow *window;
 };
-} // namespace Suzume

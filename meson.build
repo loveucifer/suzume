@@ -9,6 +9,7 @@ executable(
   'vulkan_app',
   'main.cpp',
   'firstapp.cpp',
-  'suzumewindow.cpp',
+  'SuzumeWindow.cpp',
+  'SuzumePipeline.cpp',
   dependencies: [vulkan_dep, glfw_dep],
 )

@@ -1,4 +1,5 @@
 #pragma once
+#include <SuzumePipeline.hpp>
 #include <SuzumeWindow.hpp>
 
 namespace Suzume {
@@ -12,5 +13,7 @@ public:
 
 private:
   SuzumeWindow SuzumeWindow;
+   SuzumePipeline SuzumePipeline{"shaders/SuzumeShader.vert.spv",
+                                 "shaders/SuzumeShader.frag.spv"};
 };
 } // namespace Suzume
