@@ -103,17 +103,13 @@ void FirstApp::drawFrame() {
   uint32_t imageIndex;
   auto result = swapChain.acquireNextImage(&imageIndex);
 
-  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-    // To do: recreate swap chain
-    return;
-  }
-
   if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
     throw std::runtime_error("failed to acquire swap chain image!");
   }
 
   result =
       swapChain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
       window.wasWindowResized()) {
     window.resetWindowResizedFlag();
@@ -122,5 +118,4 @@ void FirstApp::drawFrame() {
     throw std::runtime_error("failed to present swap chain image!");
   }
 }
-
 } // namespace Suzume
