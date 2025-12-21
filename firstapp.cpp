@@ -1,10 +1,10 @@
 #include <firstapp.hpp>
 
 namespace Suzume {
-firstapp::firstapp() : SuzumeWindow(WIDTH, HEIGHT, "Suzume testing") {}
+firstapp::firstapp() : window(WIDTH, HEIGHT, "Suzume testing") {}
 
 void firstapp::run() {
-  while (!this->SuzumeWindow.shouldClose()) {
+  while (!this->window.shouldClose()) {
     glfwPollEvents();
   }
 }

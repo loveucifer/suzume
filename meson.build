@@ -10,6 +10,7 @@ executable(
   'main.cpp',
   'firstapp.cpp',
   'SuzumeWindow.cpp',
+  'SuzumeDevice.cpp',
   'SuzumePipeline.cpp',
   dependencies: [vulkan_dep, glfw_dep],
 )

@@ -1,7 +1,7 @@
 #pragma once
+#include "SuzumeDevice.hpp"
 #include <SuzumePipeline.hpp>
 #include <SuzumeWindow.hpp>
-
 namespace Suzume {
 class firstapp {
 public:
@@ -12,8 +12,11 @@ public:
   void run();
 
 private:
-  SuzumeWindow SuzumeWindow;
-   SuzumePipeline SuzumePipeline{"shaders/SuzumeShader.vert.spv",
-                                 "shaders/SuzumeShader.frag.spv"};
+  SuzumeWindow window;
+  SuzumeDevice device{window};
+  SuzumePipeline pipeline{
+      device, "shaders/SuzumeShader.vert.spv",
+      "shaders/SuzumeShader.frag.spv",
+      SuzumePipeline::defaultPipelineConfigInfo(WIDTH, HEIGHT)};
 };
 } // namespace Suzume
