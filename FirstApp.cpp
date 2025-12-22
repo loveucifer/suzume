@@ -1,5 +1,4 @@
 #include "FirstApp.hpp"
-
 #include "SuzumeModel.hpp"
 #include "SuzumePipeline.hpp"
 #include "SuzumeSwapChain.hpp"
@@ -14,13 +13,14 @@
 namespace Suzume {
 
 struct SuzumePushConstantData {
-  glm::vec2 offset; // 8 bytes at offset 0
+  glm::mat2 transform{1.0f}; // default @ identity matrix
+  glm::vec2 offset;          // 8 bytes at offset 0
   alignas(16) glm::vec3
       color; // 12 bytes at offset 16 (vec3 requires 16-byte alignment in GLSL)
 };
 
 FirstApp::FirstApp() {
-  loadModels();
+  loadGameObjects();
   recreateSwapChain();
   createPipelineLayout();
   createPipeline();
@@ -40,22 +40,24 @@ void FirstApp::run() {
   vkDeviceWaitIdle(suzumeDevice.device());
 }
 
-void FirstApp::loadModels() {
+void FirstApp::loadGameObjects() {
   std::vector<SuzumeModel::Vertex> vertices{
       {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
       {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
       {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-  suzumeModel = std::make_unique<SuzumeModel>(suzumeDevice, vertices);
+  auto suzumeModel = std::make_shared<SuzumeModel>(
+      suzumeDevice, vertices); // unique before but now thats not the case
+  auto triangle = SuzumeGameObject::create();
+  triangle.model = suzumeModel;
+  triangle.color = {0.1f, 0.8f, 0.1f};
+  triangle.transform2d.translations.x = 0.2f;
+  gameObjects.push_back(std::move(triangle));
 }
 
 void FirstApp::createPipelineLayout() {
 
   assert(suzumeSwapChain != nullptr &&
          "cannot create pipeline layout before swap chain");
-  assert(
-      pipelineLayout != nullptr &&
-      "cannot create pipeline layout before pipeline"); // hmm id rather keep it
-                                                        // here im not sure yet
 
   VkPushConstantRange pushConstantRange{};
   pushConstantRange.stageFlags =
@@ -136,8 +138,6 @@ void FirstApp::freeCommandBuffers() {
 }
 
 void FirstApp::recordCommandBuffers(int imageIndex) {
-  static int frame = 0;
-  frame = (frame + 1) % 1000;
 
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -177,30 +177,29 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
   vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
   vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
 
-  suzumePipeline->bind(commandBuffers[imageIndex]);
-  suzumeModel->bind(commandBuffers[imageIndex]);
-
-  for (int j = 0; j < 4; j++) {
-    SuzumePushConstantData push{};
-    push.offset = {
-        -0.5f + frame * 0.002f,
-        -0.4f +
-            j * 0.2f}; // ADDDITOIN FOR VIDEO SHIT NOTE FOR LATER DONT FORGET
-    push.color = {0.0f, 0.0f, 0.25f + j * 0.2f};
-
-    vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT |
-                           VK_SHADER_STAGE_FRAGMENT_BIT,
-                       0, sizeof(SuzumePushConstantData), &push);
-    suzumeModel->draw(commandBuffers[imageIndex]);
-  }
-
-  // suzumeModel->draw(commandBuffers[imageIndex]);  // not we moved this inside
-  // the loop
+  renderGameObjects(commandBuffers[imageIndex]);
 
   vkCmdEndRenderPass(commandBuffers[imageIndex]);
   if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
     throw std::runtime_error("failed to record command buffer!");
+  }
+}
+
+void FirstApp::renderGameObjects(VkCommandBuffer commandBuffer) {
+  suzumePipeline->bind(commandBuffer);
+
+  for (auto &obj : gameObjects) {
+    SuzumePushConstantData push{};
+    push.offset = obj.transform2d.translations;
+    push.color = obj.color;
+    push.transform = obj.transform2d.mat2();
+
+    vkCmdPushConstants(commandBuffer, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT |
+                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                       0, sizeof(SuzumePushConstantData), &push);
+    obj.model->bind(commandBuffer);
+    obj.model->draw(commandBuffer);
   }
 }
 
