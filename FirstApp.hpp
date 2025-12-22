@@ -2,7 +2,7 @@
 #include "SuzumeDevice.hpp"
 #include "SuzumeGameObject.hpp"
 #include "SuzumePipeline.hpp"
-#include "SuzumeSwapChain.hpp"
+#include "SuzumeRenderer.hpp"
 #include "SuzumeWindow.hpp"
 #include "vulkan/vulkan_core.h"
 
@@ -25,24 +25,16 @@ public:
   void run();
 
 private:
-  void loadGameObjects(); // migrated to gameobjects from models , couldve
-                          // commented out but we have git diff
+  void loadGameObjects();
   void createPipelineLayout();
   void createPipeline();
-  void createCommandBuffers();
-  void freeCommandBuffers();
-  void drawFrame();
-  void recreateSwapChain();
-  void recordCommandBuffers(int imageIndex);
   void renderGameObjects(VkCommandBuffer commandBuffer);
 
   SuzumeWindow suzumeWindow{WIDTH, HEIGHT, "Suzume"};
   SuzumeDevice suzumeDevice{suzumeWindow};
-  std::unique_ptr<SuzumeSwapChain> suzumeSwapChain;
-  // order matters note to self
+  SuzumeRenderer suzumeRenderer{suzumeWindow, suzumeDevice};
   std::unique_ptr<SuzumePipeline> suzumePipeline;
   VkPipelineLayout pipelineLayout;
-  std::vector<VkCommandBuffer> commandBuffers;
   std::vector<SuzumeGameObject> gameObjects;
 };
 } // namespace Suzume

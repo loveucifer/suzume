@@ -30,6 +30,7 @@ void SuzumeSwapChain::init() {
   createDepthResources();
   createFramebuffers();
   createSyncObjects();
+  swapChainDepthFormat = findDepthFormat();
 }
 
 SuzumeSwapChain::~SuzumeSwapChain() {

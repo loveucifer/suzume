@@ -23,5 +23,7 @@ executable(
   'SuzumePipeline.cpp',
   'SuzumeSwapChain.cpp',
   'SuzumeModel.cpp',
+  'SuzumeRenderer.cpp',
+  'SuzumeGameObject.cpp',
   dependencies: [vulkan_dep, glfw_dep, glm_dep],
 )
