@@ -92,25 +92,18 @@ void SuzumePipeline::createGraphicsPipeline(
       static_cast<uint32_t>(bindingDescriptions.size());
   VertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
 
-  VkPipelineViewportStateCreateInfo viewportInfo{};
-  viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  viewportInfo.viewportCount = 1;
-  viewportInfo.pViewports = &configinfo.viewport;
-  viewportInfo.scissorCount = 1;
-  viewportInfo.pScissors = &configinfo.scissor;
-
   VkGraphicsPipelineCreateInfo pipelineInfo{};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineInfo.stageCount = 2;
   pipelineInfo.pStages = shaderStageInfo;
   pipelineInfo.pVertexInputState = &VertexInputInfo;
   pipelineInfo.pInputAssemblyState = &configinfo.inputAssemblyInfo;
-  pipelineInfo.pViewportState = &viewportInfo;
+  pipelineInfo.pViewportState = &configinfo.viewportStateInfo;
   pipelineInfo.pRasterizationState = &configinfo.rasterizationInfo;
   pipelineInfo.pMultisampleState = &configinfo.multisampleInfo;
   pipelineInfo.pColorBlendState = &configinfo.colorBlendInfo;
   pipelineInfo.pDepthStencilState = &configinfo.depthStencilInfo;
-  pipelineInfo.pDynamicState = nullptr;
+  pipelineInfo.pDynamicState = &configinfo.dynamicStateInfo;
 
   pipelineInfo.layout = configinfo.pipelineLayout;
   pipelineInfo.renderPass = configinfo.renderPass;
@@ -139,23 +132,19 @@ void SuzumePipeline::createShaderModule(const std::vector<char> &code,
   }
 }
 
-PipelineConfigInfo SuzumePipeline::defaultPipelineConfigInfo(uint32_t width,
-                                                             uint32_t height) {
-  PipelineConfigInfo configInfo{};
+void SuzumePipeline::defaultPipelineConfigInfo(PipelineConfigInfo &configInfo) {
 
   configInfo.inputAssemblyInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-  configInfo.viewport.x = 0.0f;
-  configInfo.viewport.y = 0.0f;
-  configInfo.viewport.width = static_cast<float>(width);
-  configInfo.viewport.height = static_cast<float>(height);
-  configInfo.viewport.minDepth = 0.0f;
-  configInfo.viewport.maxDepth = 1.0f;
 
-  configInfo.scissor.offset = {0, 0};
-  configInfo.scissor.extent = {width, height};
+  configInfo.viewportStateInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  configInfo.viewportStateInfo.viewportCount = 1;
+  configInfo.viewportStateInfo.pViewports = nullptr;
+  configInfo.viewportStateInfo.scissorCount = 1;
+  configInfo.viewportStateInfo.pScissors = nullptr;
 
   configInfo.rasterizationInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -220,6 +209,14 @@ PipelineConfigInfo SuzumePipeline::defaultPipelineConfigInfo(uint32_t width,
   configInfo.depthStencilInfo.front = {}; // Optional
   configInfo.depthStencilInfo.back = {};  // Optional
 
-  return configInfo;
+  configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT,
+                                    VK_DYNAMIC_STATE_SCISSOR};
+  configInfo.dynamicStateInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  configInfo.dynamicStateInfo.pDynamicStates =
+      configInfo.dynamicStateEnables.data();
+  configInfo.dynamicStateInfo.dynamicStateCount =
+      static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
+  configInfo.dynamicStateInfo.flags = 0;
 }
 } // namespace Suzume

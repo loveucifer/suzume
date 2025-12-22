@@ -13,6 +13,16 @@ namespace Suzume {
 
 SuzumeSwapChain::SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D extent)
     : device{deviceRef}, windowExtent{extent} {
+  init();
+}
+
+SuzumeSwapChain::SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D extent, std::shared_ptr<SuzumeSwapChain> previous)
+    : device{deviceRef}, windowExtent{extent}, oldSwapChain{previous} {
+  init();
+  oldSwapChain = nullptr; // clean up old swap chain after creation
+}
+
+void SuzumeSwapChain::init() {
   createSwapChain();
   createImageViews();
   createRenderPass();
@@ -46,9 +56,12 @@ SuzumeSwapChain::~SuzumeSwapChain() {
 
   // cleanup synchronization objects
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
     vkDestroySemaphore(device.device(), imageAvailableSemaphores[i], nullptr);
     vkDestroyFence(device.device(), inFlightFences[i], nullptr);
+  }
+  // renderFinishedSemaphores is sized by imageCount(), not MAX_FRAMES_IN_FLIGHT
+  for (size_t i = 0; i < renderFinishedSemaphores.size(); i++) {
+    vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
   }
 }
 
@@ -86,7 +99,8 @@ VkResult SuzumeSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers,
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = buffers;
 
-  VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+  // Use image-indexed semaphore to avoid reuse conflicts with swapchain images
+  VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[*imageIndex]};
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -99,8 +113,10 @@ VkResult SuzumeSwapChain::submitCommandBuffers(const VkCommandBuffer *buffers,
   VkPresentInfoKHR presentInfo = {};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
+  // Use the same image-indexed semaphore
+  VkSemaphore presentWaitSemaphores[] = {renderFinishedSemaphores[*imageIndex]};
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = signalSemaphores;
+  presentInfo.pWaitSemaphores = presentWaitSemaphores;
 
   VkSwapchainKHR swapChains[] = {swapChain};
   presentInfo.swapchainCount = 1;
@@ -161,7 +177,7 @@ void SuzumeSwapChain::createSwapChain() {
   createInfo.presentMode = presentMode;
   createInfo.clipped = VK_TRUE;
 
-  createInfo.oldSwapchain = VK_NULL_HANDLE;
+  createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->getSwapChain();
 
   if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) !=
       VK_SUCCESS) {
@@ -338,7 +354,8 @@ void SuzumeSwapChain::createDepthResources() {
 
 void SuzumeSwapChain::createSyncObjects() {
   imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-  renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  // Use per-swapchain-image semaphores to avoid reuse issues
+  renderFinishedSemaphores.resize(imageCount());
   inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
   imagesInFlight.resize(imageCount(), VK_NULL_HANDLE);
 
@@ -352,12 +369,18 @@ void SuzumeSwapChain::createSyncObjects() {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
                           &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-        vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
-                          &renderFinishedSemaphores[i]) != VK_SUCCESS ||
         vkCreateFence(device.device(), &fenceInfo, nullptr,
                       &inFlightFences[i]) != VK_SUCCESS) {
       throw std::runtime_error(
           "failed to create synchronization objects for a frame!");
+    }
+  }
+  // Create per-image render finished semaphores
+  for (size_t i = 0; i < imageCount(); i++) {
+    if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
+                          &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+      throw std::runtime_error(
+          "failed to create render finished semaphore!");
     }
   }
 }

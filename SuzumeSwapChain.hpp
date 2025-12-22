@@ -16,6 +16,7 @@ public:
   static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
   SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D windowExtent);
+  SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D windowExtent, std::shared_ptr<SuzumeSwapChain> previous);
   ~SuzumeSwapChain();
 
   SuzumeSwapChain(const SuzumeSwapChain &) = delete;
@@ -27,6 +28,7 @@ public:
   VkRenderPass getRenderPass() { return renderPass; }
   VkImageView getImageView(int index) { return swapChainImageViews[index]; }
   size_t imageCount() { return swapChainImages.size(); }
+  VkSwapchainKHR getSwapChain() { return swapChain; }
   VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
   VkExtent2D getSwapChainExtent() { return swapChainExtent; }
   uint32_t width() { return swapChainExtent.width; }
@@ -43,6 +45,7 @@ public:
                                 uint32_t *imageIndex);
 
 private:
+  void init();
   void createSwapChain();
   void createImageViews();
   void createDepthResources();
@@ -73,6 +76,7 @@ private:
   VkExtent2D windowExtent;
 
   VkSwapchainKHR swapChain;
+  std::shared_ptr<SuzumeSwapChain> oldSwapChain;
 
   std::vector<VkSemaphore> imageAvailableSemaphores;
   std::vector<VkSemaphore> renderFinishedSemaphores;
