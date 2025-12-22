@@ -12,7 +12,18 @@ namespace Suzume {
 struct Transform2dComponent {
   glm::vec2
       translations{}; // movement of traversal mostly ig like position offset
-  glm::mat2 mat2() { return glm::mat2{1.0f}; }
+  glm::vec2 scale{1.0f, 1.0f};
+  float rotation{0.0f};
+
+  glm::mat2 mat2() {
+    const float s = glm::sin(rotation);
+    const float c = glm::cos(rotation);
+    glm::mat2 rotMatrix = {{c, s}, {-s, c}};
+    glm::mat2 scaleMat = {{scale.x, 0.0f},
+                          {0.0f, scale.y}}; // takes columns not rows
+    return rotMatrix *
+           scaleMat; // basic highschoool maths i worked it out on paper lol
+  }
 };
 
 class SuzumeGameObject {

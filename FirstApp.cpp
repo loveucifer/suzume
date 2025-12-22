@@ -3,8 +3,10 @@
 #include "SuzumePipeline.hpp"
 #include "SuzumeSwapChain.hpp"
 #include "glm/fwd.hpp"
+#include "glm/gtc/constants.hpp"
 #include <array>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #define GLM_FORCE_RADIANS
@@ -51,9 +53,14 @@ void FirstApp::loadGameObjects() {
   triangle.model = suzumeModel;
   triangle.color = {0.1f, 0.8f, 0.1f};
   triangle.transform2d.translations.x = 0.2f;
+  triangle.transform2d.scale = {2.0f, 0.5f};
+  triangle.transform2d.rotation =
+      .25f *
+      glm::two_pi<float>(); // note to git diff we are using radians not degrees
   gameObjects.push_back(std::move(triangle));
 }
 
+// note to self -y axis in vulkan is up , you already made this mistake
 void FirstApp::createPipelineLayout() {
 
   assert(suzumeSwapChain != nullptr &&
@@ -187,6 +194,14 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
 
 void FirstApp::renderGameObjects(VkCommandBuffer commandBuffer) {
   suzumePipeline->bind(commandBuffer);
+  // updater for testing shit
+  int i = 0;
+  for (auto &obj : gameObjects) {
+    i += 1;
+    obj.transform2d.rotation = glm::mod<float>(
+        obj.transform2d.rotation + 0.001f * i, 2.f * glm::pi<float>());
+  }
+  // renderer
 
   for (auto &obj : gameObjects) {
     SuzumePushConstantData push{};
