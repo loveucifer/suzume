@@ -29,11 +29,10 @@ void FirstApp::run() {
   vkDeviceWaitIdle(device.device());
 }
 void FirstApp::loadModels() {
-  std::vector<SuzumeModel::Vertex> vertices = {{
-                                                   {0.0f, -0.5f},
-                                               },
-                                               {{0.5f, 0.5f}},
-                                               {{-0.5f, 0.5f}}};
+  std::vector<SuzumeModel::Vertex> vertices = {
+      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
   suzumeModel = std::make_unique<SuzumeModel>(device, vertices);
 }
 
