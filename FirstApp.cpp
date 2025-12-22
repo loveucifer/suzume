@@ -3,11 +3,20 @@
 #include "SuzumeModel.hpp"
 #include "SuzumePipeline.hpp"
 #include "SuzumeSwapChain.hpp"
+#include "glm/fwd.hpp"
 #include <array>
+#include <glm/glm.hpp>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 namespace Suzume {
+
+struct SuzumePushConstantData {
+  glm::vec2 offset;       // 8 bytes at offset 0
+  alignas(16) glm::vec3 color;  // 12 bytes at offset 16 (vec3 requires 16-byte alignment in GLSL)
+};
 
 FirstApp::FirstApp() {
   loadModels();
@@ -39,18 +48,26 @@ void FirstApp::loadModels() {
 }
 
 void FirstApp::createPipelineLayout() {
+
   assert(suzumeSwapChain != nullptr &&
          "cannot create pipeline layout before swap chain");
-  assert(pipelineLayout != nullptr &&
-         "cannot create pipeline layout before pipeline");
+  assert(
+      pipelineLayout != nullptr &&
+      "cannot create pipeline layout before pipeline"); // hmm id rather keep it
+                                                        // here im not sure yet
 
+  VkPushConstantRange pushConstantRange{};
+  pushConstantRange.stageFlags =
+      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+  pushConstantRange.offset = 0;
+  pushConstantRange.size = sizeof(SuzumePushConstantData);
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 0;
   pipelineLayoutInfo.pSetLayouts = nullptr;
-  pipelineLayoutInfo.pushConstantRangeCount = 0;
-  pipelineLayoutInfo.pPushConstantRanges = nullptr;
+  pipelineLayoutInfo.pushConstantRangeCount = 1;
+  pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
   if (vkCreatePipelineLayout(suzumeDevice.device(), &pipelineLayoutInfo,
                              nullptr, &pipelineLayout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout!");
@@ -158,7 +175,21 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
 
   suzumePipeline->bind(commandBuffers[imageIndex]);
   suzumeModel->bind(commandBuffers[imageIndex]);
-  suzumeModel->draw(commandBuffers[imageIndex]);
+
+  for (int j = 0; j < 4; j++) {
+    SuzumePushConstantData push{};
+    push.offset = {0.0f, -0.4f + j * 0.2f};
+    push.color = {0.0f, 0.0f, 0.25f + j * 0.2f};
+
+    vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT |
+                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                       0, sizeof(SuzumePushConstantData), &push);
+    suzumeModel->draw(commandBuffers[imageIndex]);
+  }
+
+  // suzumeModel->draw(commandBuffers[imageIndex]);  // not we moved this inside
+  // the loop
 
   vkCmdEndRenderPass(commandBuffers[imageIndex]);
   if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
