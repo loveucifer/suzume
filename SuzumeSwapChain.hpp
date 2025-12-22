@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 // std lib headers
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -16,7 +17,8 @@ public:
   static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
   SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D windowExtent);
-  SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D windowExtent, std::shared_ptr<SuzumeSwapChain> previous);
+  SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D windowExtent,
+                  std::shared_ptr<SuzumeSwapChain> previous);
   ~SuzumeSwapChain();
 
   SuzumeSwapChain(const SuzumeSwapChain &) = delete;

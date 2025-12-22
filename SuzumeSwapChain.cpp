@@ -16,7 +16,8 @@ SuzumeSwapChain::SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D extent)
   init();
 }
 
-SuzumeSwapChain::SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D extent, std::shared_ptr<SuzumeSwapChain> previous)
+SuzumeSwapChain::SuzumeSwapChain(SuzumeDevice &deviceRef, VkExtent2D extent,
+                                 std::shared_ptr<SuzumeSwapChain> previous)
     : device{deviceRef}, windowExtent{extent}, oldSwapChain{previous} {
   init();
   oldSwapChain = nullptr; // clean up old swap chain after creation
@@ -177,7 +178,8 @@ void SuzumeSwapChain::createSwapChain() {
   createInfo.presentMode = presentMode;
   createInfo.clipped = VK_TRUE;
 
-  createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->getSwapChain();
+  createInfo.oldSwapchain =
+      oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->getSwapChain();
 
   if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) !=
       VK_SUCCESS) {
@@ -379,8 +381,7 @@ void SuzumeSwapChain::createSyncObjects() {
   for (size_t i = 0; i < imageCount(); i++) {
     if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
                           &renderFinishedSemaphores[i]) != VK_SUCCESS) {
-      throw std::runtime_error(
-          "failed to create render finished semaphore!");
+      throw std::runtime_error("failed to create render finished semaphore!");
     }
   }
 }

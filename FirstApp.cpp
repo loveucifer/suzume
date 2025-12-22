@@ -11,8 +11,9 @@ namespace Suzume {
 
 FirstApp::FirstApp() {
   loadModels();
-  createPipelineLayout();
   recreateSwapChain();
+  createPipelineLayout();
+  createPipeline();
   createCommandBuffers();
 }
 
@@ -38,6 +39,12 @@ void FirstApp::loadModels() {
 }
 
 void FirstApp::createPipelineLayout() {
+  assert(suzumeSwapChain != nullptr &&
+         "cannot create pipeline layout before swap chain");
+  assert(pipelineLayout != nullptr &&
+         "cannot create pipeline layout before pipeline");
+
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 0;
@@ -67,18 +74,22 @@ void FirstApp::recreateSwapChain() {
     glfwWaitEvents(); // for minimization shit
   }
   vkDeviceWaitIdle(suzumeDevice.device());
-  
+
   if (suzumeSwapChain == nullptr) {
     suzumeSwapChain = std::make_unique<SuzumeSwapChain>(suzumeDevice, extent);
   } else {
     std::shared_ptr<SuzumeSwapChain> oldSwapChain = std::move(suzumeSwapChain);
-    suzumeSwapChain = std::make_unique<SuzumeSwapChain>(suzumeDevice, extent, oldSwapChain);
-    
-    if (suzumeSwapChain->imageCount() != oldSwapChain->imageCount()) {
-      throw std::runtime_error("Swap chain image count has changed!");
+    suzumeSwapChain =
+        std::make_unique<SuzumeSwapChain>(suzumeDevice, extent, oldSwapChain);
+
+    if (suzumeSwapChain->imageCount() != commandBuffers.size()) {
+      freeCommandBuffers();
+      createCommandBuffers();
     }
   }
-  createPipeline();
+
+  // lfuture otpimization : check if render passes are compatible and if so  do
+  // absolute zilch
 }
 
 void FirstApp::createCommandBuffers() {
@@ -94,6 +105,16 @@ void FirstApp::createCommandBuffers() {
                                commandBuffers.data()) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
+}
+
+void FirstApp::freeCommandBuffers() {
+  vkFreeCommandBuffers(
+      suzumeDevice.device(), suzumeDevice.getCommandPool(),
+      static_cast<uint32_t>(
+          commandBuffers.size()), // dont forget this is not fucking float u
+                                  // broke it lots of times get fucking sleep
+      commandBuffers.data());
+  commandBuffers.clear();
 }
 
 void FirstApp::recordCommandBuffers(int imageIndex) {
@@ -146,30 +167,32 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
 }
 
 void FirstApp::drawFrame() {
-    uint32_t imageIndex;
-    auto result = suzumeSwapChain->acquireNextImage(&imageIndex);
+  uint32_t imageIndex;
+  auto result = suzumeSwapChain->acquireNextImage(&imageIndex);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      recreateSwapChain();
-      return;
-    }
-
-    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-      throw std::runtime_error("failed to acquire swap chain image!");
-    }
-
-    recordCommandBuffers(imageIndex);
-    result = suzumeSwapChain->submitCommandBuffers(&commandBuffers[imageIndex],
-                                                   &imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-        suzumeWindow.wasWindowResized()) {
-      suzumeWindow.resetWindowResizedFlag();
-      recreateSwapChain();
-      return;
-    }
-    if (result != VK_SUCCESS) {
-      throw std::runtime_error("failed to present swap chain image!");
-    }
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreateSwapChain();
+    createPipeline();
+    return;
   }
+
+  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    throw std::runtime_error("failed to acquire swap chain image!");
+  }
+
+  recordCommandBuffers(imageIndex);
+  result = suzumeSwapChain->submitCommandBuffers(&commandBuffers[imageIndex],
+                                                 &imageIndex);
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
+      suzumeWindow.wasWindowResized()) {
+    suzumeWindow.resetWindowResizedFlag();
+    recreateSwapChain();
+    createPipeline();
+    return;
+  }
+  if (result != VK_SUCCESS) {
+    throw std::runtime_error("failed to present swap chain image!");
+  }
+}
 
 } // namespace Suzume
