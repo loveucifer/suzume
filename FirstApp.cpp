@@ -14,8 +14,9 @@
 namespace Suzume {
 
 struct SuzumePushConstantData {
-  glm::vec2 offset;       // 8 bytes at offset 0
-  alignas(16) glm::vec3 color;  // 12 bytes at offset 16 (vec3 requires 16-byte alignment in GLSL)
+  glm::vec2 offset; // 8 bytes at offset 0
+  alignas(16) glm::vec3
+      color; // 12 bytes at offset 16 (vec3 requires 16-byte alignment in GLSL)
 };
 
 FirstApp::FirstApp() {
@@ -135,6 +136,9 @@ void FirstApp::freeCommandBuffers() {
 }
 
 void FirstApp::recordCommandBuffers(int imageIndex) {
+  static int frame = 0;
+  frame = (frame + 1) % 1000;
+
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -152,7 +156,7 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
   renderPassInfo.renderArea.extent = suzumeSwapChain->getSwapChainExtent();
 
   std::array<VkClearValue, 2> clearValues{};
-  clearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
+  clearValues[0].color = {{0.01f, 0.01f, 0.01f, 1.0f}};
   clearValues[1].depthStencil = {1.0f, 0};
   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
   renderPassInfo.pClearValues = clearValues.data();
@@ -178,7 +182,10 @@ void FirstApp::recordCommandBuffers(int imageIndex) {
 
   for (int j = 0; j < 4; j++) {
     SuzumePushConstantData push{};
-    push.offset = {0.0f, -0.4f + j * 0.2f};
+    push.offset = {
+        -0.5f + frame * 0.002f,
+        -0.4f +
+            j * 0.2f}; // ADDDITOIN FOR VIDEO SHIT NOTE FOR LATER DONT FORGET
     push.color = {0.0f, 0.0f, 0.25f + j * 0.2f};
 
     vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
