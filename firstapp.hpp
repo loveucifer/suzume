@@ -30,10 +30,12 @@ private:
   void createPipeline();
   void createCommandBuffers();
   void drawFrame();
+  void recreateSwapChain();
+  void recordCommandBuffers(int imageIndex);
 
-  SuzumeWindow window{WIDTH, HEIGHT, "Vulkan"};
-  SuzumeDevice device{window};
-  SuzumeSwapChain swapChain{device, window.getExtent()};
+  SuzumeWindow suzumeWindow{WIDTH, HEIGHT, "Suzume"};
+  SuzumeDevice suzumeDevice{suzumeWindow};
+  std::unique_ptr<SuzumeSwapChain> suzumeSwapChain;
   // order matters note to self
   std::unique_ptr<SuzumePipeline> suzumePipeline;
   VkPipelineLayout pipelineLayout;

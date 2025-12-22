@@ -19,7 +19,7 @@ public:
   ~SuzumeSwapChain();
 
   SuzumeSwapChain(const SuzumeSwapChain &) = delete;
-  void operator=(const SuzumeSwapChain &) = delete;
+  SuzumeSwapChain &operator=(const SuzumeSwapChain &) = delete;
 
   VkFramebuffer getFrameBuffer(int index) {
     return swapChainFramebuffers[index];

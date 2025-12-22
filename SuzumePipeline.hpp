@@ -6,8 +6,8 @@
 
 namespace Suzume {
 struct PipelineConfigInfo {
-  VkViewport viewport;
-  VkRect2D scissor;
+
+  VkPipelineViewportStateCreateInfo viewportStateInfo;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
   VkPipelineRasterizationStateCreateInfo rasterizationInfo;
   VkPipelineMultisampleStateCreateInfo multisampleInfo;
@@ -16,6 +16,7 @@ struct PipelineConfigInfo {
   VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
   VkPipelineLayout pipelineLayout = nullptr;
   VkRenderPass renderPass = nullptr;
+  std::vector<VkDynamicState> dynamicStateEnables;
   uint32_t subpass = 0;
 };
 
@@ -27,7 +28,7 @@ public:
   ~SuzumePipeline();
 
   SuzumePipeline(const SuzumePipeline &) = delete;
-  void operator=(const SuzumePipeline &) = delete;
+  SuzumePipeline &operator=(const SuzumePipeline &) = delete;
 
   void bind(VkCommandBuffer commandBuffer);
 

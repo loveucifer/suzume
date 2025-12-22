@@ -35,7 +35,7 @@ public:
 
   // Not copyable or movable
   SuzumeDevice(const SuzumeDevice &) = delete;
-  void operator=(const SuzumeDevice &) = delete;
+  SuzumeDevice &operator=(const SuzumeDevice &) = delete;
   SuzumeDevice(SuzumeDevice &&) = delete;
   SuzumeDevice &operator=(SuzumeDevice &&) = delete;
 

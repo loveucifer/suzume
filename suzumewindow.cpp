@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+namespace Suzume {
+
 void SuzumeWindow::framebufferResizeCallback(GLFWwindow *window, int width,
                                              int height) {
   auto suzumeWindow =
@@ -38,3 +40,5 @@ void SuzumeWindow::createWindowSurface(VkInstance instance,
     throw std::runtime_error("failed to create window surface!");
   }
 }
+
+} // namespace Suzume

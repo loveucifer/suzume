@@ -12,28 +12,29 @@ namespace Suzume {
 FirstApp::FirstApp() {
   loadModels();
   createPipelineLayout();
-  createPipeline();
+  recreateSwapChain();
   createCommandBuffers();
 }
 
 FirstApp::~FirstApp() {
-  vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+  vkDestroyPipelineLayout(suzumeDevice.device(), pipelineLayout, nullptr);
 }
 
 void FirstApp::run() {
-  while (!window.shouldClose()) {
+  while (!suzumeWindow.shouldClose()) {
     glfwPollEvents();
     drawFrame();
   }
 
-  vkDeviceWaitIdle(device.device());
+  vkDeviceWaitIdle(suzumeDevice.device());
 }
+
 void FirstApp::loadModels() {
-  std::vector<SuzumeModel::Vertex> vertices = {
+  std::vector<SuzumeModel::Vertex> vertices{
       {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
       {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
       {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-  suzumeModel = std::make_unique<SuzumeModel>(device, vertices);
+  suzumeModel = std::make_unique<SuzumeModel>(suzumeDevice, vertices);
 }
 
 void FirstApp::createPipelineLayout() {
@@ -43,91 +44,107 @@ void FirstApp::createPipelineLayout() {
   pipelineLayoutInfo.pSetLayouts = nullptr;
   pipelineLayoutInfo.pushConstantRangeCount = 0;
   pipelineLayoutInfo.pPushConstantRanges = nullptr;
-  if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr,
-                             &pipelineLayout) != VK_SUCCESS) {
+  if (vkCreatePipelineLayout(suzumeDevice.device(), &pipelineLayoutInfo,
+                             nullptr, &pipelineLayout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout!");
   }
 }
 
 void FirstApp::createPipeline() {
-  auto pipelineConfig = SuzumePipeline::defaultPipelineConfigInfo(
-      swapChain.width(), swapChain.height());
-  pipelineConfig.renderPass = swapChain.getRenderPass();
+  PipelineConfigInfo pipelineConfig = SuzumePipeline::defaultPipelineConfigInfo(
+      suzumeSwapChain->width(), suzumeSwapChain->height());
+  pipelineConfig.renderPass = suzumeSwapChain->getRenderPass();
   pipelineConfig.pipelineLayout = pipelineLayout;
   suzumePipeline = std::make_unique<SuzumePipeline>(
-      device, "shaders/SuzumeShader.vert.spv", "shaders/SuzumeShader.frag.spv",
-      pipelineConfig);
+      suzumeDevice, "shaders/SuzumeShader.vert.spv",
+      "shaders/SuzumeShader.frag.spv", pipelineConfig);
 }
-
+void FirstApp::recreateSwapChain() {
+  auto extent = suzumeWindow.getExtent();
+  while (extent.width == 0 || extent.height == 0) {
+    extent = suzumeWindow.getExtent();
+    glfwWaitEvents(); // for minimization shit
+  }
+  vkDeviceWaitIdle(suzumeDevice.device());
+  suzumeSwapChain = std::make_unique<SuzumeSwapChain>(suzumeDevice, extent);
+  createPipeline();
+}
 void FirstApp::createCommandBuffers() {
-  commandBuffers.resize(swapChain.imageCount());
+  commandBuffers.resize(suzumeSwapChain->imageCount());
 
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandPool = device.getCommandPool();
-  allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+  allocInfo.commandPool = suzumeDevice.getCommandPool();
+  allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-  if (vkAllocateCommandBuffers(device.device(), &allocInfo,
+  if (vkAllocateCommandBuffers(suzumeDevice.device(), &allocInfo,
                                commandBuffers.data()) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
-
-  for (int i = 0; i < commandBuffers.size(); i++) {
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-      throw std::runtime_error("failed to begin recording command buffer!");
-    }
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = swapChain.getRenderPass();
-    renderPassInfo.framebuffer = swapChain.getFrameBuffer(i);
-
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapChain.getSwapChainExtent();
-
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
-    clearValues[1].depthStencil = {1.0f, 0};
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-
-    suzumePipeline->bind(commandBuffers[i]);
-    suzumeModel->bind(commandBuffers[i]);
-    suzumeModel->draw(commandBuffers[i]);
-
-    vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
-
-    vkCmdEndRenderPass(commandBuffers[i]);
-
-    if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-      throw std::runtime_error("failed to record command buffer!");
-    }
-  }
 }
+
+void FirstApp::recordCommandBuffers(int imageIndex) {
+  VkCommandBufferBeginInfo beginInfo{};
+beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) !=
+    VK_SUCCESS) {
+  throw std::runtime_error("failed to begin recording command buffer!");
+}
+
+VkRenderPassBeginInfo renderPassInfo{};
+renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+renderPassInfo.renderPass = suzumeSwapChain->getRenderPass();
+renderPassInfo.framebuffer = suzumeSwapChain->getFrameBuffer(imageIndex);
+
+renderPassInfo.renderArea.offset = {0, 0};
+renderPassInfo.renderArea.extent = suzumeSwapChain->getSwapChainExtent();
+
+std::array<VkClearValue, 2> clearValues{};
+clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
+clearValues[1].depthStencil = {1.0f, 0};
+renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+renderPassInfo.pClearValues = clearValues.data();
+
+vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo,
+                     VK_SUBPASS_CONTENTS_INLINE);
+
+suzumePipeline->bind(commandBuffers[imageIndex]);
+suzumeModel->bind(commandBuffers[imageIndex]);
+suzumeModel->draw(commandBuffers[imageIndex]);
+
+vkCmdEndRenderPass(commandBuffers[imageIndex]);
+if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
+  throw std::runtime_error("failed to record command buffer!");
+}
+}
+
 void FirstApp::drawFrame() {
   uint32_t imageIndex;
-  auto result = swapChain.acquireNextImage(&imageIndex);
+  auto result = suzumeSwapChain->acquireNextImage(&imageIndex);
+
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreateSwapChain();
+    return;
+  }
 
   if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
     throw std::runtime_error("failed to acquire swap chain image!");
   }
 
-  result =
-      swapChain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
-
+  recordCommandBuffers(imageIndex);
+  result = suzumeSwapChain->submitCommandBuffers(&commandBuffers[imageIndex],
+                                                 &imageIndex);
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-      window.wasWindowResized()) {
-    window.resetWindowResizedFlag();
-    // To do: recreate swap chain
-  } else if (result != VK_SUCCESS) {
+      suzumeWindow.wasWindowResized()) {
+    suzumeWindow.resetWindowResizedFlag();
+    recreateSwapChain();
+    return;
+  }
+  if (result != VK_SUCCESS) {
     throw std::runtime_error("failed to present swap chain image!");
   }
 }
+
 } // namespace Suzume
