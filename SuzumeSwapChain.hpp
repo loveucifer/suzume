@@ -31,7 +31,10 @@ public:
   VkImageView getImageView(int index) { return swapChainImageViews[index]; }
   size_t imageCount() { return swapChainImages.size(); }
   VkSwapchainKHR getSwapChain() { return swapChain; }
-  VkFormat getSwapChainImageFormat() { return swapChainImageFormat; }
+
+  VkFormat getSwapChainImageFormat();
+  VkFormat getSwapChainDepthFormat();
+
   VkExtent2D getSwapChainExtent() { return swapChainExtent; }
   uint32_t width() { return swapChainExtent.width; }
   uint32_t height() { return swapChainExtent.height; }

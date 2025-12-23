@@ -67,6 +67,14 @@ SuzumeSwapChain::~SuzumeSwapChain() {
   }
 }
 
+VkFormat SuzumeSwapChain::getSwapChainImageFormat() {
+  return swapChainImageFormat;
+}
+
+VkFormat SuzumeSwapChain::getSwapChainDepthFormat() {
+  return swapChainDepthFormat;
+}
+
 VkResult SuzumeSwapChain::acquireNextImage(uint32_t *imageIndex) {
   vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE,
                   std::numeric_limits<uint64_t>::max());
@@ -311,6 +319,7 @@ void SuzumeSwapChain::createFramebuffers() {
 
 void SuzumeSwapChain::createDepthResources() {
   VkFormat depthFormat = findDepthFormat();
+  swapChainDepthFormat = depthFormat;
   VkExtent2D swapChainExtent = getSwapChainExtent();
 
   depthImages.resize(imageCount());
