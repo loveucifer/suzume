@@ -15,15 +15,12 @@
 namespace Suzume {
 
 struct SuzumePushConstantData {
-  glm::mat2 transform{1.0f}; // default @ identity matrix
-  glm::vec2 offset;          // 8 bytes at offset 0
-  alignas(16) glm::vec3
-      color; // 12 bytes at offset 16 (vec3 requires 16-byte alignment in GLSL)
+  glm::mat4 transform{1.f};
+  alignas(16) glm::vec3 color{};
 };
 
 FirstApp::FirstApp() {
   loadGameObjects();
-
   createPipelineLayout();
   createPipeline();
 }
@@ -46,27 +43,76 @@ void FirstApp::run() {
   vkDeviceWaitIdle(suzumeDevice.device());
 }
 
-void FirstApp::loadGameObjects() {
+// temporary helper function, creates a 1x1x1 cube centered at offset
+std::unique_ptr<SuzumeModel> createCubeModel(SuzumeDevice &device, glm::vec3 offset) {
   std::vector<SuzumeModel::Vertex> vertices{
-      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-  auto suzumeModel = std::make_shared<SuzumeModel>(
-      suzumeDevice, vertices); // unique before but now thats not the case
-  auto triangle = SuzumeGameObject::create();
-  triangle.model = suzumeModel;
-  triangle.color = {0.1f, 0.8f, 0.1f};
-  triangle.transform2d.translations.x = 0.2f;
-  triangle.transform2d.scale = {2.0f, 0.5f};
-  triangle.transform2d.rotation =
-      .25f *
-      glm::two_pi<float>(); // note to git diff we are using radians not degrees
-  gameObjects.push_back(std::move(triangle));
+
+      // left face (coral pink gradient)
+      {{-.5f, -.5f, -.5f}, {1.0f, .4f, .5f}},
+      {{-.5f, .5f, .5f}, {1.0f, .6f, .7f}},
+      {{-.5f, -.5f, .5f}, {1.0f, .5f, .6f}},
+      {{-.5f, -.5f, -.5f}, {1.0f, .4f, .5f}},
+      {{-.5f, .5f, -.5f}, {1.0f, .5f, .6f}},
+      {{-.5f, .5f, .5f}, {1.0f, .6f, .7f}},
+
+      // right face (mint green gradient)
+      {{.5f, -.5f, -.5f}, {.3f, .9f, .7f}},
+      {{.5f, .5f, .5f}, {.5f, 1.0f, .8f}},
+      {{.5f, -.5f, .5f}, {.4f, .95f, .75f}},
+      {{.5f, -.5f, -.5f}, {.3f, .9f, .7f}},
+      {{.5f, .5f, -.5f}, {.4f, .95f, .75f}},
+      {{.5f, .5f, .5f}, {.5f, 1.0f, .8f}},
+
+      // top face (cyan gradient)
+      {{-.5f, -.5f, -.5f}, {.2f, .8f, 1.0f}},
+      {{.5f, -.5f, .5f}, {.4f, .9f, 1.0f}},
+      {{-.5f, -.5f, .5f}, {.3f, .85f, 1.0f}},
+      {{-.5f, -.5f, -.5f}, {.2f, .8f, 1.0f}},
+      {{.5f, -.5f, -.5f}, {.3f, .85f, 1.0f}},
+      {{.5f, -.5f, .5f}, {.4f, .9f, 1.0f}},
+
+      // bottom face (magenta gradient)
+      {{-.5f, .5f, -.5f}, {.9f, .2f, .6f}},
+      {{.5f, .5f, .5f}, {1.0f, .4f, .8f}},
+      {{-.5f, .5f, .5f}, {.95f, .3f, .7f}},
+      {{-.5f, .5f, -.5f}, {.9f, .2f, .6f}},
+      {{.5f, .5f, -.5f}, {.95f, .3f, .7f}},
+      {{.5f, .5f, .5f}, {1.0f, .4f, .8f}},
+
+      // front face (electric blue gradient)
+      {{-.5f, -.5f, 0.5f}, {.1f, .4f, 1.0f}},
+      {{.5f, .5f, 0.5f}, {.3f, .6f, 1.0f}},
+      {{-.5f, .5f, 0.5f}, {.2f, .5f, 1.0f}},
+      {{-.5f, -.5f, 0.5f}, {.1f, .4f, 1.0f}},
+      {{.5f, -.5f, 0.5f}, {.2f, .5f, 1.0f}},
+      {{.5f, .5f, 0.5f}, {.3f, .6f, 1.0f}},
+
+      // back face (purple gradient)
+      {{-.5f, -.5f, -0.5f}, {.6f, .2f, .9f}},
+      {{.5f, .5f, -0.5f}, {.8f, .4f, 1.0f}},
+      {{-.5f, .5f, -0.5f}, {.7f, .3f, .95f}},
+      {{-.5f, -.5f, -0.5f}, {.6f, .2f, .9f}},
+      {{.5f, -.5f, -0.5f}, {.7f, .3f, .95f}},
+      {{.5f, .5f, -0.5f}, {.8f, .4f, 1.0f}},
+
+  };
+  for (auto &v : vertices) {
+    v.position += offset;
+  }
+  return std::make_unique<SuzumeModel>(device, vertices);
 }
 
-// note to self -y axis in vulkan is up , you already made this mistake
-void FirstApp::createPipelineLayout() {
+void FirstApp::loadGameObjects() {
+  std::shared_ptr<SuzumeModel> suzumeModel =
+      createCubeModel(suzumeDevice, {.0f, .0f, .0f});
+  auto cube = SuzumeGameObject::createGameObject();
+  cube.model = suzumeModel;
+  cube.transform.translation = {.0f, .0f, .5f};
+  cube.transform.scale = {.5f, .5f, .5f};
+  gameObjects.push_back(std::move(cube));
+}
 
+void FirstApp::createPipelineLayout() {
   VkPushConstantRange pushConstantRange{};
   pushConstantRange.stageFlags =
       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -97,24 +143,19 @@ void FirstApp::createPipeline() {
 
 void FirstApp::renderGameObjects(VkCommandBuffer commandBuffer) {
   suzumePipeline->bind(commandBuffer);
-  // updater for testing shit
-  int i = 0;
-  for (auto &obj : gameObjects) {
-    i += 1;
-    obj.transform2d.rotation = glm::mod<float>(
-        obj.transform2d.rotation + 0.001f * i, 2.f * glm::pi<float>());
-  }
-  // renderer
 
   for (auto &obj : gameObjects) {
+    obj.transform.rotation.y =
+        glm::mod(obj.transform.rotation.y + 0.01f, glm::two_pi<float>());
+    obj.transform.rotation.x =
+        glm::mod(obj.transform.rotation.x + 0.005f, glm::two_pi<float>());
+
     SuzumePushConstantData push{};
-    push.offset = obj.transform2d.translations;
     push.color = obj.color;
-    push.transform = obj.transform2d.mat2();
+    push.transform = obj.transform.mat4();
 
     vkCmdPushConstants(commandBuffer, pipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT |
-                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                        0, sizeof(SuzumePushConstantData), &push);
     obj.model->bind(commandBuffer);
     obj.model->draw(commandBuffer);
